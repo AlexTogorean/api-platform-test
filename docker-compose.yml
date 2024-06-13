@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  app:
+    build: docker
+    container_name: api-test-php
+    restart: 'always'
+    ports:
+      - "8077:80"
+      - "4432:443"
+    links:
+      - db
+    volumes:
+      - .:/var/www/html
+    networks:
+      - api-test
+
+  db:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    container_name: api-test-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-db_name}
+      # You should definitely change the password in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pass}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-db_name}", "-U", "${POSTGRES_USER:-user}"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - api-test_db:/var/lib/postgresql/data:rw
+    ports:
+      - "5000:5432"
+    networks:
+      - api-test
+
+volumes:
+  api-test_db:
+
+networks:
+  api-test:
